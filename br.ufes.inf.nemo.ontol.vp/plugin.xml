@@ -1,0 +1,37 @@
+<plugin
+		id="br.ufes.inf.nemo.ontol.vp"
+		name="OntoL Plugin for VP"
+		description="OntoL Model Synchronization Plugin for VP 12.0"
+		provider="Claudenir Fonseca"
+		class="br.ufes.inf.nemo.ontol.vp.OntoLPluginForVP">
+	<actionSets>
+		<actionSet id="br.ufes.inf.nemo.ontol.vp.actionset1">
+			<toolbar
+					id="br.ufes.inf.nemo.ontol.vp.actionset1.toolbar1"
+					orientation="north"
+					index="last"/>
+			<action 
+					id="br.ufes.inf.nemo.ontol.vp.actions.ReloadPlugin"
+					actionType="generalAction"
+					description=""
+					style="normal"
+					tooltip="Reload plugin facilitating debug - debug use only (Ctrl+Shift+1)" 
+					icon="icons/refresh4.png"
+					label="Reload Plugin - Debug Only" 
+					toolbarPath="br.ufes.inf.nemo.ontol.vp.actionset1.toolbar1/#">
+				<actionController class="br.ufes.inf.nemo.ontol.vp.actions.ReloadPlugin" />
+			</action>
+			<action 
+					id="br.ufes.inf.nemo.ontol.vp.actions.OpenSynchronizationMenu"
+					actionType="generalAction"
+					description=""
+					style="normal"
+					tooltip="Open synchronization menu for loading OntoL based models (Ctrl+Shift+2)" 
+					icon="icons/play-triangle.png"
+					label="Open Synchronization Menu"
+					toolbarPath="br.ufes.inf.nemo.ontol.vp.actionset1.toolbar1/#">
+				<actionController class="br.ufes.inf.nemo.ontol.vp.actions.OpenSynchronizationMenu" />
+			</action>
+		</actionSet>
+	</actionSets>
+</plugin>
