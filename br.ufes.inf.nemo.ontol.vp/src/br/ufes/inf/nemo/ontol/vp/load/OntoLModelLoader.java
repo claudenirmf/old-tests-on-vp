@@ -27,6 +27,7 @@ import com.vp.plugin.model.ITaggedValueDefinition;
 import com.vp.plugin.model.ITaggedValueDefinitionContainer;
 import com.vp.plugin.model.factory.IModelElementFactory;
 
+import br.ufes.inf.nemo.ontol.model.CategorizationType;
 import br.ufes.inf.nemo.ontol.model.EntityDeclaration;
 import br.ufes.inf.nemo.ontol.model.FOClass;
 import br.ufes.inf.nemo.ontol.model.HOClass;
@@ -37,6 +38,8 @@ import br.ufes.inf.nemo.ontol.model.ModelPackage;
 import br.ufes.inf.nemo.ontol.model.OntoLClass;
 import br.ufes.inf.nemo.ontol.model.OrderlessClass;
 import br.ufes.inf.nemo.ontol.vp.access.VPClass;
+import br.ufes.inf.nemo.ontol.vp.access.VPDependency;
+import br.ufes.inf.nemo.ontol.vp.access.VPDependencyType;
 import br.ufes.inf.nemo.ontol.vp.access.VPModelAccess;
 import br.ufes.inf.nemo.ontol.vp.access.VPModelElement;
 import br.ufes.inf.nemo.ontol.vp.access.VPPackage;
@@ -280,7 +283,6 @@ public class OntoLModelLoader {
 		}
 	}
 
-	// TODO invert instantiation relations
 	private static void updateInstantiations(EntityDeclaration e, VPClass vpc) {
 		Set<VPClass> firsts = vpc.getInstantiatedClasses();
 		List<OntoLClass> seconds = e.getInstantiatedClasses();
@@ -317,17 +319,71 @@ public class OntoLModelLoader {
 
 	private static void updateSubordinations(OntoLClass c, VPClass vpc) {
 		// TODO Auto-generated method stub
-		
+		Set<VPClass> firsts = vpc.getSubordinatorClasses();
+		List<OntoLClass> seconds = c.getSubordinators();
+		// Who is on first but not on second must leave
+		for (VPClass first : firsts) {
+			String fqn1 = first.getFullyQualifiedName();
+			boolean found = false;
+			for (OntoLClass second : seconds) {
+				String fqn2 = getFullyQualifiedName(second);
+				if(fqn1 == fqn2){
+					found = true;
+					break;
+				}
+			}
+			if(!found){
+				firsts.remove(first);
+				// TODO delete old subordination dependency relation
+			}
+		}
+		// Who is on second but not on first must stay
+		for (OntoLClass second : seconds){
+			String fqn2 = getFullyQualifiedName(second);
+			boolean found = false;
+			for (VPClass first : firsts)
+				if(fqn2 == first.getFullyQualifiedName()){
+					found = true;
+					break;
+				}
+			if(!found){
+				vpc.addSubordinatorClass(second);
+			}
+		}
 	}
 
 	private static void updateCategorizations(OntoLClass c, VPClass vpc) {
-		// TODO Auto-generated method stub
-		
+		VPDependency vpd = vpc.getDependencyToBasetype();
+		OntoLClass basetype = c.getBasetype();
+		OntoLClass basepwt = c.getPowertypeOf();
+		// No current basetype
+		if(vpd == null){
+			if(basetype!=null)
+				vpc.addBasetypeClass(basetype,c.getCategorizationType());
+			else if(basepwt!=null)
+				vpc.addBasetypeClass(basepwt);
+			return	;
+		}
+		// Check for a match
+		VPClass basevpc = vpd.getTarget();
+		String fqn = basevpc.getFullyQualifiedName();
+		VPDependencyType vpdtype = vpd.getType();
+		if(fqn==getFullyQualifiedName(basepwt) && vpdtype ==VPDependencyType.POWERTYPING){
+			return	;
+		} else if(fqn==getFullyQualifiedName(basetype) && vpdtype.convert()==basetype.getCategorizationType()) {
+			return	;
+		}
+		// In case of no match, delete and recreate
+		vpd.getVPSource().delete();
+		if(basetype!=null)
+			vpc.addBasetypeClass(basetype,c.getCategorizationType());
+		else if(basepwt!=null)
+			vpc.addBasetypeClass(basepwt);
+		return	;
 	}
 
 	private static void updatePowertyping(OntoLClass c, VPClass vpc) {
-		// TODO Auto-generated method stub
-		
+		// TODO break updateCategorizations into two methods
 	}
 
 	private static void updateReferences(OntoLClass c, VPClass vpc) {
@@ -340,19 +396,6 @@ public class OntoLModelLoader {
 		
 	}
 
-//	private static void setOrder(HOClass ho, VPClass vpc) {
-//		IClass source = vpc.getVPSource();
-//		ITaggedValueContainer container = source.getTaggedValues();
-//		ITaggedValue[] tvalues = container.toTaggedValueArray();
-//		int tvcount = tvalues == null ? 0 : tvalues.length;
-//		for (int i=0; i < tvcount; i++) {
-//			if(tvalues[i].getName()==TG_VALLUE_ORDER){
-//				tvalues[i].setValue(ho.getOrder());
-//				tvalues[i].setMultiplicity(ITaggedValue.MULTIPLICITY_ONE);
-//			}
-//		}
-//	}
-//
 	private static void setStereotype(EntityDeclaration e, VPClass vpc) {
 		IClass source = vpc.getVPSource();
 		// Clear previous stereotypes

@@ -16,6 +16,7 @@ import com.vp.plugin.model.ITaggedValue;
 import com.vp.plugin.model.ITaggedValueContainer;
 import com.vp.plugin.model.factory.IModelElementFactory;
 
+import br.ufes.inf.nemo.ontol.model.CategorizationType;
 import br.ufes.inf.nemo.ontol.model.EntityDeclaration;
 import br.ufes.inf.nemo.ontol.model.HOClass;
 import br.ufes.inf.nemo.ontol.model.OntoLClass;
@@ -90,19 +91,49 @@ public class VPClass extends VPModelElement {
 //		}
 //		return outgoingRelations.toArray(new _VPAssociationWrap[0]);
 //	}
+	
+	private Set<VPGeneralization> getGeneralizationsToSuperClasses(){
+		Set<VPGeneralization> generalizations = new LinkedHashSet<VPGeneralization>();
+		if(getVPSource().toRelationshipCount()==0)	return generalizations;
+		@SuppressWarnings("rawtypes")
+		Iterator iter = getVPSource().toRelationshipIterator();
+		while(iter.hasNext()){
+			IRelationship next = (IRelationship) iter.next();
+			VPModelElement g = VPModelElement.wrap(next);
+			if(g instanceof VPGeneralization){
+				generalizations.add((VPGeneralization) g);
+			}
+		}
+		
+		return generalizations;
+	}
 
 	// TODO REVIEW THE USE OF VPModelManager.getModelElemWrap() BASED ON IDS
 	public Set<VPClass> getSuperClasses(){
 		Set<VPClass> superClasses = new LinkedHashSet<VPClass>();
-		if(getVPSource().toReferenceArray()==null){ return superClasses; }
-		
-		for (IReference reference : getVPSource().toReferenceArray()) {
-			VPModelElement g = VPModelElement.wrap(reference);
-			if(g instanceof VPGeneralization){
-				superClasses.add(((VPGeneralization) g).getSuperClass());
-			}
-		};
+		for (VPGeneralization g : getGeneralizationsToSuperClasses()) {
+			superClasses.add(g.getSuperClass());
+		}
 		return superClasses;
+//		if(getVPSource().toRelationshipCount()==0)	return superClasses;
+//		@SuppressWarnings("rawtypes")
+//		Iterator iter = getVPSource().toRelationshipIterator();
+//		while(iter.hasNext()){
+//			IRelationship next = (IRelationship) iter.next();
+//			VPModelElement g = VPModelElement.wrap(next);
+//			if(g instanceof VPGeneralization){
+//				superClasses.add(((VPGeneralization) g).getSuperClass());
+//			}
+//		}
+//		
+//		if(getVPSource().toReferenceArray()==null){ return superClasses; }
+//		
+//		for (IReference reference : getVPSource().toReferenceArray()) {
+//			VPModelElement g = VPModelElement.wrap(reference);
+//			if(g instanceof VPGeneralization){
+//				superClasses.add(((VPGeneralization) g).getSuperClass());
+//			}
+//		};
 	}
 	
 	/**
@@ -132,14 +163,16 @@ public class VPClass extends VPModelElement {
 	}
 	
 	public void removeSuper(VPClass vpClass) throws Exception {
-		throw new Exception("Removal of old super classes not implemented yet.");
-		// TODO Auto-generated method stub
+		for (VPGeneralization g : getGeneralizationsToSuperClasses()) {
+			if(g.getSuperClass()==vpClass)
+				g.getVPSource().delete();
+		}
 	}
 
 	private Set<VPDependency> getDependenciesByStereotype(String strName) {
-		Set<VPDependency> iofs = new HashSet<VPDependency>();
+		Set<VPDependency> dependencies = new HashSet<VPDependency>();
 		IClass source = getVPSource();
-		if(source.toReferenceArray()==null) { return iofs; }
+		if(source.toRelationshipCount()==0) { return dependencies; }
 		
 		@SuppressWarnings("rawtypes")
 		Iterator iter = source.toRelationshipIterator();
@@ -150,10 +183,10 @@ public class VPClass extends VPModelElement {
 				if(strNames==null || strNames.length==0)	continue;
 				for(String name : strNames)
 					if(name ==  strName)
-						iofs.add((VPDependency) VPModelElement.wrap(r));
+						dependencies.add((VPDependency) VPModelElement.wrap(r));
 			}
 		}
-		return iofs;
+		return dependencies;
 	}
 	
 	public Set<VPClass> getInstantiatedClasses() {
@@ -164,6 +197,16 @@ public class VPClass extends VPModelElement {
 				iofs.add(vpc);
 		}
 		return iofs;
+	}
+	
+	public Set<VPClass> getSubordinatorClasses() {
+		Set<VPClass> subordinators = new HashSet<VPClass>();
+		for (VPDependency vpd : getDependenciesByStereotype(OntoLModelLoader.STR_SUBORDINATION)) {
+			VPClass vpc = vpd.getTarget();
+			if(vpc!=null)
+				subordinators.add(vpc);
+		}
+		return subordinators;
 	}
 
 	public Set<IRelationship> getDepartingRelationshipTo(VPClass other) {
@@ -204,14 +247,86 @@ public class VPClass extends VPModelElement {
 		}
 	}
 
-	public void addInstantiatedClass(OntoLClass c) {
+	private void addDependencyTo(OntoLClass c, String dependencyStereotype) {
 		IDependency d = IModelElementFactory.instance().createDependency();
 		VPDependency vpd = (VPDependency) VPModelElement.wrap(d);
 		VPClass target = (VPClass) VPModelAccess.getModelElement(OntoLModelLoader.getFullyQualifiedName(c));
 		vpd.setTarget(target);
 		vpd.setSource(this);
-		vpd.addStereotype(OntoLModelLoader.STR_INSTANTIATION);
-		System.out.println("SOURCE "+this+" and TARGET "+target);
+		vpd.addStereotype(dependencyStereotype);
+	}
+	
+	public void addInstantiatedClass(OntoLClass c) {
+		addDependencyTo(c, OntoLModelLoader.STR_INSTANTIATION);
+//		IDependency d = IModelElementFactory.instance().createDependency();
+//		VPDependency vpd = (VPDependency) VPModelElement.wrap(d);
+//		VPClass target = (VPClass) VPModelAccess.getModelElement(OntoLModelLoader.getFullyQualifiedName(c));
+//		vpd.setTarget(target);
+//		vpd.setSource(this);
+//		vpd.addStereotype(OntoLModelLoader.STR_INSTANTIATION);
+	}
+
+	public void addSubordinatorClass(OntoLClass c) {
+		addDependencyTo(c, OntoLModelLoader.STR_SUBORDINATION);
+	}
+
+	public VPDependency getDependencyToBasetype() {
+		// TODO Auto-generated method stub
+		Set<VPDependency> dependencies = getDependencies();
+		for (VPDependency vpd : dependencies) {
+			switch (vpd.getType()) {
+			case INSTANTIATION:
+			case SUBORDINATION:
+			case CATERGORIZATION:
+			case COMPLETE_CATEGORIZATION:
+			case DISJOINT_CATEGORIZATION:
+			case PARTITIONING:
+			case POWERTYPING:
+				return vpd;
+			default:
+				break;
+			}
+		}
+		
+		return null;
+	}
+	
+	private Set<VPDependency> getDependencies(){
+		Set<VPDependency> dependencies = new HashSet<VPDependency>();
+		IClass source = getVPSource();
+		if(source.toRelationshipCount()==0) { return dependencies; }
+		
+		@SuppressWarnings("rawtypes")
+		Iterator iter = source.toRelationshipIterator();
+		while(iter.hasNext()){
+			IRelationship r = (IRelationship) iter.next();
+			if(r instanceof IDependency)
+				dependencies.add((VPDependency) VPModelElement.wrap(r));
+		}
+		return dependencies;
+	}
+
+	public void addBasetypeClass(OntoLClass c, CategorizationType catType) {
+		switch (catType) {
+		case CATEGORIZER:
+			addDependencyTo(c,OntoLModelLoader.STR_CATEGORIZATION);
+			break;
+		case COMPLETE_CATEGORIZER:
+			addDependencyTo(c,OntoLModelLoader.STR_COMPL_CATEGORZATION);
+			break;
+		case DISJOINT_CATEGORIZER:
+			addDependencyTo(c,OntoLModelLoader.STR_DISJ_CATEGORIZATION);
+			break;
+		case PARTITIONER:
+			addDependencyTo(c,OntoLModelLoader.STR_PARTITIONS);
+			break;
+		default:
+			break;
+		}
+	}
+
+	public void addBasetypeClass(OntoLClass c) {
+		addDependencyTo(c,OntoLModelLoader.STR_POWER_TYPE);
 	}
 	
 }
