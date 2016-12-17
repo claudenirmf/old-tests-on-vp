@@ -52,17 +52,17 @@ public class VPDependency extends VPModelElement {
 		for (String str : strs) {
 			if(str == VPDependencyType.INSTANTIATION.str())
 				return VPDependencyType.INSTANTIATION;
-			else if(str == VPDependencyType.SUBORDINATION.str())
+			else if(str.equals(VPDependencyType.SUBORDINATION.str()))
 				return VPDependencyType.SUBORDINATION;
-			else if(str == VPDependencyType.CATERGORIZATION.str())
+			else if(str.equals(VPDependencyType.CATERGORIZATION.str()))
 				return VPDependencyType.CATERGORIZATION;
-			else if(str == VPDependencyType.COMPLETE_CATEGORIZATION.str())
+			else if(str.equals(VPDependencyType.COMPLETE_CATEGORIZATION.str()))
 				return VPDependencyType.COMPLETE_CATEGORIZATION;
-			else if(str == VPDependencyType.DISJOINT_CATEGORIZATION.str())
+			else if(str.equals(VPDependencyType.DISJOINT_CATEGORIZATION.str()))
 				return VPDependencyType.DISJOINT_CATEGORIZATION;
-			else if(str == VPDependencyType.PARTITIONING.str())
+			else if(str.equals(VPDependencyType.PARTITIONING.str()))
 				return VPDependencyType.PARTITIONING;
-			else if(str == VPDependencyType.POWERTYPING.str())
+			else if(str.equals(VPDependencyType.POWERTYPING.str()))
 				return VPDependencyType.POWERTYPING;
 		}
 		return VPDependencyType.NONE;

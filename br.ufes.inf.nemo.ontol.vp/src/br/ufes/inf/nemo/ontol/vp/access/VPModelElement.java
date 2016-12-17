@@ -1,5 +1,6 @@
 package br.ufes.inf.nemo.ontol.vp.access;
 
+import com.vp.plugin.model.IAssociation;
 import com.vp.plugin.model.IClass;
 import com.vp.plugin.model.IDependency;
 import com.vp.plugin.model.IGeneralization;
@@ -23,8 +24,8 @@ public abstract class VPModelElement {
 			return new VPPackage((IPackage) sourceEntity);
 		} else if(sourceEntity instanceof IDependency){
 			return new VPDependency((IDependency) sourceEntity);
-//		} else if(sourceEntity instanceof IAssociation){
-//			return new _VPAssociationWrap((IAssociation) sourceEntity);
+		} else if(sourceEntity instanceof IAssociation){
+			return new VPAssociation((IAssociation) sourceEntity);
 //		}  else if(sourceEntity instanceof IGeneralizationSet){
 //			return new _VPGenSetWrap((IGeneralizationSet) sourceEntity);
 		} else {

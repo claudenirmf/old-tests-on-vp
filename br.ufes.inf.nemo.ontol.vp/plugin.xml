@@ -32,6 +32,27 @@
 					toolbarPath="br.ufes.inf.nemo.ontol.vp.actionset1.toolbar1/#">
 				<actionController class="br.ufes.inf.nemo.ontol.vp.actions.OpenSynchronizationMenu" />
 			</action>
+			<action 
+					id="br.ufes.inf.nemo.ontol.vp.actions.LoadModel"
+					actionType="generalAction"
+					description=""
+					style="normal"
+					tooltip="Loads model from a given path" 
+					icon="icons/upload.png"
+					label="Load Model"
+					toolbarPath="br.ufes.inf.nemo.ontol.vp.actionset1.toolbar1/#">
+				<actionController class="br.ufes.inf.nemo.ontol.vp.actions.LoadModel" />
+			</action>
+			<action 
+					id="br.ufes.inf.nemo.ontol.vp.actions.TestAction"
+					actionType="generalAction"
+					description=""
+					style="normal"
+					tooltip="Runs some test - DEBUG ONLY" 
+					label="Run Test - DEBUG"
+					toolbarPath="br.ufes.inf.nemo.ontol.vp.actionset1.toolbar1/#">
+				<actionController class="br.ufes.inf.nemo.ontol.vp.actions.TestAction" />
+			</action>
 		</actionSet>
 	</actionSets>
 </plugin>

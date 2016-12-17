@@ -5,12 +5,15 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.vp.plugin.model.IAssociation;
+import com.vp.plugin.model.IAssociationEnd;
 import com.vp.plugin.model.IClass;
 import com.vp.plugin.model.IDependency;
 import com.vp.plugin.model.IGeneralization;
 import com.vp.plugin.model.IModelElement;
 import com.vp.plugin.model.IReference;
 import com.vp.plugin.model.IRelationship;
+import com.vp.plugin.model.IRelationshipEnd;
 import com.vp.plugin.model.IStereotype;
 import com.vp.plugin.model.ITaggedValue;
 import com.vp.plugin.model.ITaggedValueContainer;
@@ -20,6 +23,7 @@ import br.ufes.inf.nemo.ontol.model.CategorizationType;
 import br.ufes.inf.nemo.ontol.model.EntityDeclaration;
 import br.ufes.inf.nemo.ontol.model.HOClass;
 import br.ufes.inf.nemo.ontol.model.OntoLClass;
+import br.ufes.inf.nemo.ontol.model.Reference;
 import br.ufes.inf.nemo.ontol.vp.load.OntoLModelLoader;
 
 /** 
@@ -182,7 +186,7 @@ public class VPClass extends VPModelElement {
 				String[] strNames = ((IDependency) r).toStereotypeArray();
 				if(strNames==null || strNames.length==0)	continue;
 				for(String name : strNames)
-					if(name ==  strName)
+					if(name.equals(strName))
 						dependencies.add((VPDependency) VPModelElement.wrap(r));
 			}
 		}
@@ -239,7 +243,7 @@ public class VPClass extends VPModelElement {
 		ITaggedValue[] tvalues = container.toTaggedValueArray();
 		int tvcount = tvalues == null ? 0 : tvalues.length;
 		for (int i=0; i < tvcount; i++) {
-			if(tvalues[i].getName()==OntoLModelLoader.TG_VALLUE_ORDER){
+			if(tvalues[i].getName().equals(OntoLModelLoader.TG_VALLUE_ORDER)){
 				tvalues[i].setValue(ho.getOrder());
 				tvalues[i].setMultiplicity(ITaggedValue.MULTIPLICITY_ONE);
 				return ;
@@ -327,6 +331,36 @@ public class VPClass extends VPModelElement {
 
 	public void addBasetypeClass(OntoLClass c) {
 		addDependencyTo(c,OntoLModelLoader.STR_POWER_TYPE);
+	}
+	
+	public Set<VPAssociation> getToAssociations(){
+		Set<VPAssociation> associations = new HashSet<VPAssociation>();
+		IClass source = getVPSource();
+		if(source.fromRelationshipEndCount()==0) { return associations; }
+		
+		@SuppressWarnings("rawtypes")
+		Iterator iter = source.fromRelationshipEndIterator();
+		while(iter.hasNext()){
+			IRelationshipEnd end = (IRelationshipEnd) iter.next();
+			if(end instanceof IAssociationEnd)
+				associations.add((VPAssociation) VPModelElement.wrap(end.getEndRelationship()));
+		}
+		return associations;
+	}
+
+	public void addToAssociation(Reference reference) {
+		IAssociation associationSource = IModelElementFactory.instance().createAssociation();
+		VPAssociation association = (VPAssociation) VPModelElement.wrap(associationSource);
+
+		getVPSource().getParent().addChild(associationSource);
+		VPClass to = (VPClass) VPModelAccess.getModelElement(OntoLModelLoader.getFullyQualifiedName(reference.getPropertyClass()));
+		associationSource.setFrom(getVPSource());
+		associationSource.setTo(to.getVPSource());
+		
+		association.getToEnd().setName(reference.getName());
+		association.getToEnd().setMultiplicity(reference.getLowerBound()+".."+reference.getUpperBound());
+		association.getToEnd().setNavigable(IAssociationEnd.NAVIGABLE_NAVIGABLE);
+		association.getFromEnd().setNavigable(IAssociationEnd.NAVIGABLE_UNSPECIFIED);
 	}
 	
 }

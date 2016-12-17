@@ -37,6 +37,8 @@ import br.ufes.inf.nemo.ontol.model.ModelElement;
 import br.ufes.inf.nemo.ontol.model.ModelPackage;
 import br.ufes.inf.nemo.ontol.model.OntoLClass;
 import br.ufes.inf.nemo.ontol.model.OrderlessClass;
+import br.ufes.inf.nemo.ontol.model.Reference;
+import br.ufes.inf.nemo.ontol.vp.access.VPAssociation;
 import br.ufes.inf.nemo.ontol.vp.access.VPClass;
 import br.ufes.inf.nemo.ontol.vp.access.VPDependency;
 import br.ufes.inf.nemo.ontol.vp.access.VPDependencyType;
@@ -167,14 +169,14 @@ public class OntoLModelLoader {
 		// Returns the stereotype in case it is found
 		for(IModelElement m : stereotypes){
 			final IStereotype s = (IStereotype) m;
-			if(s.getName()==strName && s.getBaseType()==baseType)
+			if(s.getName().equals(strName) && s.getBaseType().equals(baseType))
 				return s;
 		}
 		// If the stereotype does not exist, its is created, recorded and returned
 		final IStereotype s = IModelElementFactory.instance().createStereotype();
 		s.setName(strName);
 		s.setBaseType(baseType);
-		if(strName==STR_HIGH_ORDER_CLASS){
+		if(strName.equals(STR_HIGH_ORDER_CLASS)){
 			ITaggedValueDefinitionContainer container = IModelElementFactory.instance().createTaggedValueDefinitionContainer();
 			s.setTaggedValueDefinitions(container);
 			ITaggedValueDefinition order = container.createTaggedValueDefinition();
@@ -257,7 +259,7 @@ public class OntoLModelLoader {
 			String vpc_fqn = vpc.getFullyQualifiedName();
 			boolean found = false;
 			for (OntoLClass ontoLSuper : ontoLSupers)
-				if(!ontoLSuper.eIsProxy() && vpc_fqn == getFullyQualifiedName(ontoLSuper)) {
+				if(!ontoLSuper.eIsProxy() && vpc_fqn .equals( getFullyQualifiedName(ontoLSuper))) {
 					found = true;
 					ontoLSupers.remove(ontoLSuper);
 					break;
@@ -273,7 +275,7 @@ public class OntoLModelLoader {
 			String ol_fqn = getFullyQualifiedName(ontoLSuper);
 			boolean found = false;
 			for (VPClass vpClass : oldSupers)
-				if(ol_fqn == vpClass.getFullyQualifiedName()){
+				if(ol_fqn .equals( vpClass.getFullyQualifiedName())){
 					found = true;
 					break;
 				}
@@ -292,7 +294,7 @@ public class OntoLModelLoader {
 			boolean found = false;
 			for (OntoLClass second : seconds) {
 				String fqn2 = getFullyQualifiedName(second);
-				if(fqn1 == fqn2){
+				if(fqn1 .equals( fqn2)){
 					found = true;
 					break;
 				}
@@ -307,7 +309,7 @@ public class OntoLModelLoader {
 			String fqn2 = getFullyQualifiedName(second);
 			boolean found = false;
 			for (VPClass first : firsts)
-				if(fqn2 == first.getFullyQualifiedName()){
+				if(fqn2.equals(first.getFullyQualifiedName())){
 					found = true;
 					break;
 				}
@@ -318,7 +320,6 @@ public class OntoLModelLoader {
 	}
 
 	private static void updateSubordinations(OntoLClass c, VPClass vpc) {
-		// TODO Auto-generated method stub
 		Set<VPClass> firsts = vpc.getSubordinatorClasses();
 		List<OntoLClass> seconds = c.getSubordinators();
 		// Who is on first but not on second must leave
@@ -327,7 +328,7 @@ public class OntoLModelLoader {
 			boolean found = false;
 			for (OntoLClass second : seconds) {
 				String fqn2 = getFullyQualifiedName(second);
-				if(fqn1 == fqn2){
+				if(fqn1.equals(fqn2)){
 					found = true;
 					break;
 				}
@@ -342,7 +343,7 @@ public class OntoLModelLoader {
 			String fqn2 = getFullyQualifiedName(second);
 			boolean found = false;
 			for (VPClass first : firsts)
-				if(fqn2 == first.getFullyQualifiedName()){
+				if(fqn2 .equals( first.getFullyQualifiedName())){
 					found = true;
 					break;
 				}
@@ -368,9 +369,9 @@ public class OntoLModelLoader {
 		VPClass basevpc = vpd.getTarget();
 		String fqn = basevpc.getFullyQualifiedName();
 		VPDependencyType vpdtype = vpd.getType();
-		if(fqn==getFullyQualifiedName(basepwt) && vpdtype ==VPDependencyType.POWERTYPING){
+		if(fqn.equals(getFullyQualifiedName(basepwt)) && vpdtype==VPDependencyType.POWERTYPING){
 			return	;
-		} else if(fqn==getFullyQualifiedName(basetype) && vpdtype.convert()==basetype.getCategorizationType()) {
+		} else if(fqn.equals(getFullyQualifiedName(basetype)) && vpdtype.convert()==basetype.getCategorizationType()) {
 			return	;
 		}
 		// In case of no match, delete and recreate
@@ -387,8 +388,43 @@ public class OntoLModelLoader {
 	}
 
 	private static void updateReferences(OntoLClass c, VPClass vpc) {
-		// TODO Auto-generated method stub
-		
+		Set<VPAssociation> associations = vpc.getToAssociations();
+		List<Reference> references = c.getReferences();
+		Set<VPAssociation> theseAreOk = new HashSet<VPAssociation>();
+		Set<Reference> ignoreThese = new HashSet<Reference>();
+		// Who is on first but not on second must leave
+		for (VPAssociation association : associations) {
+			for (Reference reference : references) {
+				if(association.equals(reference)){
+					association.update(reference);
+					theseAreOk.add(association);
+					ignoreThese.add(reference);
+					break;
+				}
+			}
+		}
+		associations.removeAll(theseAreOk);
+		references.removeAll(ignoreThese);
+		for (VPAssociation association : associations) {
+			association.getVPSource().delete();
+		}
+		// Who is on second but not on first must stay
+		for (Reference reference : references) {
+			vpc.addToAssociation(reference);
+		}
+		/*
+		for (Reference reference : references){
+			boolean found = false;
+			for (VPAssociation association : associations)
+				if(association.equals(reference)){
+					found = true;
+					break;
+				}
+			if(!found){
+				vpc.addSubordinatorClass(second);
+			}
+		}
+		*/
 	}
 
 	private static void updateAttributes(OntoLClass c, VPClass vpc) {

@@ -18,9 +18,8 @@ public class OpenSynchronizationMenu implements VPActionController {
 		System.out.println("Open synchronization menu button pressed.");
 		
 		VPModelAccess.load();
-		
 		OntoLModelLoader.clear();
-		String path = "C:\\Users\\claud\\Documents\\Workspaces\\runtime-EclipseApplication\\Linus Project\\src-gen\\models";
+		String path = "C:\\Users\\claud\\git\\OntoL-Maven\\br.ufes.inf.nemo.ontol.parent\\br.ufes.inf.nemo.ontol.lib\\src-gen\\models\\";
 		String name = "ufo-a.xmi";
 		OntoLModelLoader.loadModel(name,path);
 		OntoLModelLoader.feed();
