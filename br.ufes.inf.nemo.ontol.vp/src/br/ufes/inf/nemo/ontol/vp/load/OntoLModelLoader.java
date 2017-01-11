@@ -81,9 +81,9 @@ public class OntoLModelLoader {
 	public static synchronized void clear(){
 		if(getResourceSet()!=null)
 			getResourceSet().getResources().clear();
-		if(stereotypes!=null)
-			for (IStereotype str : stereotypes)
-				str.delete();
+//		if(stereotypes!=null)
+//			for (IStereotype str : stereotypes)
+//				str.delete();
 	}
 	
 	public static synchronized void loadModel(String name, String path) {
@@ -126,10 +126,22 @@ public class OntoLModelLoader {
 	}
 	
 	public static void update() {
-		for (ModelElement elem : getLoadedModelElements()) {
+		Set<ModelElement> set = getLoadedModelElements();
+		for (ModelElement e : set) {
+			if(e instanceof OntoLClass){
+				OntoLClass c = (OntoLClass) e;
+				if(c.eIsProxy())	System.out.println("Proxy found: "+c.getName());
+			}
+		}
+		
+		int count=1, size=set.size();
+		for (ModelElement elem : set) {
 			if(elem instanceof OntoLClass){
 				OntoLClass c = (OntoLClass) elem;
+				System.out.println("Updating ["+count+"/"+size+"] "+c.getName()); count++;
+				if(c.eIsProxy())	System.out.println("Proxy");
 				VPClass vpc = (VPClass) VPModelAccess.getModelElement(getFullyQualifiedName(c));
+				
 				setStereotype(c,vpc);
 				updateSpecializations(c,vpc);
 				updateInstantiations(c,vpc);
@@ -151,6 +163,12 @@ public class OntoLModelLoader {
 
 	public static String getFullyQualifiedName(ModelElement element) {
 		if(element instanceof OntoLClass){
+			if(((OntoLClass) element).getName() == null)	
+				System.out.println("The element name is null.");
+			else if(element.eContainer() == null)	System.out.println("The container of "+((OntoLClass) element).getName()+" is null.");
+			else if(((Model) element.eContainer()).getName() == null)	System.out.println("The container name of"+((OntoLClass) element).getName()+" is null.");
+			
+			
 			return ((Model) element.eContainer()).getName() 
 					+ '.' + ((OntoLClass) element).getName();
 		} else {
@@ -250,72 +268,76 @@ public class OntoLModelLoader {
 	}
 
 	private static void updateSpecializations(OntoLClass c, VPClass vpc) {
-		Set<VPClass> oldSupers = new HashSet<VPClass>();
-		Set<OntoLClass> ontoLSupers = new HashSet<OntoLClass>();
-		oldSupers.addAll(vpc.getSuperClasses());
-		ontoLSupers.addAll(c.getSuperClasses());
+		Set<VPClass> vpsupers = vpc.getSuperClasses();
+		Set<OntoLClass> ontolsupers = new HashSet<OntoLClass>();
+		ontolsupers.addAll(c.getSuperClasses());
+		
+		Set<VPClass> dontDelete = new HashSet<VPClass>();
+		Set<OntoLClass> alreadySupers = new HashSet<OntoLClass>();
+		
 		// Remove old supers
-		for (VPClass vpClass : oldSupers) {
-			String vpc_fqn = vpc.getFullyQualifiedName();
-			boolean found = false;
-			for (OntoLClass ontoLSuper : ontoLSupers)
-				if(!ontoLSuper.eIsProxy() && vpc_fqn .equals( getFullyQualifiedName(ontoLSuper))) {
-					found = true;
-					ontoLSupers.remove(ontoLSuper);
+		for (VPClass oldsuper : vpsupers) {
+			for (OntoLClass ontoLSuper : ontolsupers){
+				if(oldsuper.equals(ontoLSuper)) {
+					dontDelete.add(oldsuper);
+					alreadySupers.add(ontoLSuper);
 					break;
 				}
-			if(!found)
-				try { vpc.removeSuper(vpClass); } 
-				catch (Exception e) { e.printStackTrace(); }
-		}
-		// Add new supers
-		for (OntoLClass ontoLSuper : ontoLSupers) {
-			if(ontoLSuper.eIsProxy())	continue;
-			// If it is not a proxy, verifies if it already exists
-			String ol_fqn = getFullyQualifiedName(ontoLSuper);
-			boolean found = false;
-			for (VPClass vpClass : oldSupers)
-				if(ol_fqn .equals( vpClass.getFullyQualifiedName())){
-					found = true;
-					break;
-				}
-			if(!found){
-				vpc.addSuper(ontoLSuper);
 			}
 		}
+		// Add missing supers
+		ontolsupers.removeAll(alreadySupers);
+		for (OntoLClass oc : ontolsupers) {
+			vpc.addSuper(oc);
+		}
+		// Remove non-matching supers
+		vpsupers.removeAll(dontDelete);
+		for (VPClass notasuper : vpsupers) {
+			try {
+				vpc.removeSuper(notasuper);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+//		// Add new supers
+//		for (OntoLClass ontoLSuper : ontolsupers) {
+//			if(ontoLSuper.eIsProxy())	continue;
+//			// If it is not a proxy, verifies if it already exists
+//			String ol_fqn = getFullyQualifiedName(ontoLSuper);
+//			boolean found = false;
+//			for (VPClass vpClass : vpsupers)
+//				if(ol_fqn .equals( vpClass.getFullyQualifiedName())){
+//					found = true;
+//					break;
+//				}
+//			if(!found){
+//				vpc.addSuper(ontoLSuper);
+//			}
+//		}
 	}
 
 	private static void updateInstantiations(EntityDeclaration e, VPClass vpc) {
 		Set<VPClass> firsts = vpc.getInstantiatedClasses();
 		List<OntoLClass> seconds = e.getInstantiatedClasses();
+		Set<VPClass> dontDelete = new HashSet<VPClass>();
+		Set<OntoLClass> dontCreate = new HashSet<OntoLClass>();
 		// Who is on first but not on second must leave
 		for (VPClass first : firsts) {
-			String fqn1 = first.getFullyQualifiedName();
-			boolean found = false;
 			for (OntoLClass second : seconds) {
-				String fqn2 = getFullyQualifiedName(second);
-				if(fqn1 .equals( fqn2)){
-					found = true;
+				if(first.equals(second)){
+					dontDelete.add(first);
+					dontCreate.add(second);
 					break;
 				}
-			}
-			if(!found){
-				firsts.remove(first);
-				// TODO delete old instantiation dependency relation
 			}
 		}
-		// Who is on second but not on first must stay
-		for (OntoLClass second : seconds){
-			String fqn2 = getFullyQualifiedName(second);
-			boolean found = false;
-			for (VPClass first : firsts)
-				if(fqn2.equals(first.getFullyQualifiedName())){
-					found = true;
-					break;
-				}
-			if(!found){
-				vpc.addInstantiatedClass(second);
-			}
+		firsts.removeAll(dontDelete);
+		for (VPClass todelete : firsts) {
+			vpc.removeInstantiationTo(todelete);
+		}
+		seconds.removeAll(dontCreate);
+		for (OntoLClass tocreate : seconds) {
+			vpc.addInstantiatedTo(tocreate);
 		}
 	}
 

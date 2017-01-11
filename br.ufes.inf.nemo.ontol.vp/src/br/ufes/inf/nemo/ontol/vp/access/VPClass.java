@@ -173,21 +173,24 @@ public class VPClass extends VPModelElement {
 		}
 	}
 
-	private Set<VPDependency> getDependenciesByStereotype(String strName) {
+	private Set<VPDependency> getDependenciesByType(VPDependencyType type) {
 		Set<VPDependency> dependencies = new HashSet<VPDependency>();
 		IClass source = getVPSource();
-		if(source.toRelationshipCount()==0) { return dependencies; }
+		if(source.fromRelationshipCount()==0) { return dependencies; }
 		
 		@SuppressWarnings("rawtypes")
-		Iterator iter = source.toRelationshipIterator();
+		Iterator iter = source.fromRelationshipIterator();
 		while(iter.hasNext()){
 			IRelationship r = (IRelationship) iter.next();
 			if(r instanceof IDependency){
-				String[] strNames = ((IDependency) r).toStereotypeArray();
-				if(strNames==null || strNames.length==0)	continue;
-				for(String name : strNames)
-					if(name.equals(strName))
-						dependencies.add((VPDependency) VPModelElement.wrap(r));
+				VPDependency vpd = (VPDependency) VPModelElement.wrap(r);
+				if(vpd.getType()==type)
+					dependencies.add(vpd);
+//				String[] strNames = ((IDependency) r).toStereotypeArray();
+//				if(strNames==null || strNames.length==0)	continue;
+//				for(String name : strNames)
+//					if(name.equals(strName))
+//						dependencies.add((VPDependency) VPModelElement.wrap(r));
 			}
 		}
 		return dependencies;
@@ -195,7 +198,7 @@ public class VPClass extends VPModelElement {
 	
 	public Set<VPClass> getInstantiatedClasses() {
 		Set<VPClass> iofs = new HashSet<VPClass>();
-		for (VPDependency vpd : getDependenciesByStereotype(OntoLModelLoader.STR_INSTANTIATION)) {
+		for (VPDependency vpd : getDependenciesByType(VPDependencyType.INSTANTIATION)) {
 			VPClass vpc = vpd.getTarget();
 			if(vpc!=null)
 				iofs.add(vpc);
@@ -205,7 +208,7 @@ public class VPClass extends VPModelElement {
 	
 	public Set<VPClass> getSubordinatorClasses() {
 		Set<VPClass> subordinators = new HashSet<VPClass>();
-		for (VPDependency vpd : getDependenciesByStereotype(OntoLModelLoader.STR_SUBORDINATION)) {
+		for (VPDependency vpd : getDependenciesByType(VPDependencyType.SUBORDINATION)) {
 			VPClass vpc = vpd.getTarget();
 			if(vpc!=null)
 				subordinators.add(vpc);
@@ -260,7 +263,7 @@ public class VPClass extends VPModelElement {
 		vpd.addStereotype(dependencyStereotype);
 	}
 	
-	public void addInstantiatedClass(OntoLClass c) {
+	public void addInstantiatedTo(OntoLClass c) {
 		addDependencyTo(c, OntoLModelLoader.STR_INSTANTIATION);
 //		IDependency d = IModelElementFactory.instance().createDependency();
 //		VPDependency vpd = (VPDependency) VPModelElement.wrap(d);
@@ -361,6 +364,22 @@ public class VPClass extends VPModelElement {
 		association.getToEnd().setMultiplicity(reference.getLowerBound()+".."+reference.getUpperBound());
 		association.getToEnd().setNavigable(IAssociationEnd.NAVIGABLE_NAVIGABLE);
 		association.getFromEnd().setNavigable(IAssociationEnd.NAVIGABLE_UNSPECIFIED);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof OntoLClass){
+			OntoLClass oc = (OntoLClass) obj;
+			String str1 = getFullyQualifiedName();
+			String str2 = OntoLModelLoader.getFullyQualifiedName(oc);
+			return str1.equals(str2);
+		}
+		return super.equals(obj);
+	}
+
+	public void removeInstantiationTo(VPClass todelete) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }
