@@ -46,7 +46,7 @@ public class VPDependency extends VPModelElement {
 	}
 	
 	public VPDependencyType getType(){
-		String[] strs = getSource().getStereotypeList();
+		String[] strs = getVPSource().toStereotypeArray();
 		if(strs == null)	return VPDependencyType.NONE;
 		
 		for (String str : strs) {

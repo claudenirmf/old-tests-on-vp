@@ -176,11 +176,11 @@ public class VPClass extends VPModelElement {
 	private Set<VPDependency> getDependenciesByType(VPDependencyType type) {
 		Set<VPDependency> dependencies = new HashSet<VPDependency>();
 		IClass source = getVPSource();
-		if(source.fromRelationshipCount()==0) { return dependencies; }
+//		if(source.fromRelationshipCount()==0) { return dependencies; }
 		
 		@SuppressWarnings("rawtypes")
 		Iterator iter = source.fromRelationshipIterator();
-		while(iter.hasNext()){
+		while(iter!=null && iter.hasNext()){
 			IRelationship r = (IRelationship) iter.next();
 			if(r instanceof IDependency){
 				VPDependency vpd = (VPDependency) VPModelElement.wrap(r);
@@ -263,7 +263,7 @@ public class VPClass extends VPModelElement {
 		vpd.addStereotype(dependencyStereotype);
 	}
 	
-	public void addInstantiatedTo(OntoLClass c) {
+	public void addInstantiationTo(OntoLClass c) {
 		addDependencyTo(c, OntoLModelLoader.STR_INSTANTIATION);
 //		IDependency d = IModelElementFactory.instance().createDependency();
 //		VPDependency vpd = (VPDependency) VPModelElement.wrap(d);

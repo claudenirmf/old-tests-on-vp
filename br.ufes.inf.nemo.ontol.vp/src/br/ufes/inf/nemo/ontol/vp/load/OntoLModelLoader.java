@@ -127,21 +127,13 @@ public class OntoLModelLoader {
 	
 	public static void update() {
 		Set<ModelElement> set = getLoadedModelElements();
-		for (ModelElement e : set) {
-			if(e instanceof OntoLClass){
-				OntoLClass c = (OntoLClass) e;
-				if(c.eIsProxy())	System.out.println("Proxy found: "+c.getName());
-			}
-		}
-		
 		int count=1, size=set.size();
 		for (ModelElement elem : set) {
+			System.out.println("Updating ["+count+"/"+size+"] "); count++;
+			
 			if(elem instanceof OntoLClass){
 				OntoLClass c = (OntoLClass) elem;
-				System.out.println("Updating ["+count+"/"+size+"] "+c.getName()); count++;
-				if(c.eIsProxy())	System.out.println("Proxy");
 				VPClass vpc = (VPClass) VPModelAccess.getModelElement(getFullyQualifiedName(c));
-				
 				setStereotype(c,vpc);
 				updateSpecializations(c,vpc);
 				updateInstantiations(c,vpc);
@@ -317,27 +309,27 @@ public class OntoLModelLoader {
 	}
 
 	private static void updateInstantiations(EntityDeclaration e, VPClass vpc) {
-		Set<VPClass> firsts = vpc.getInstantiatedClasses();
-		List<OntoLClass> seconds = e.getInstantiatedClasses();
+		Set<VPClass> vp_iofs = vpc.getInstantiatedClasses();
+		List<OntoLClass> ontol_iofs = e.getInstantiatedClasses();
 		Set<VPClass> dontDelete = new HashSet<VPClass>();
 		Set<OntoLClass> dontCreate = new HashSet<OntoLClass>();
 		// Who is on first but not on second must leave
-		for (VPClass first : firsts) {
-			for (OntoLClass second : seconds) {
-				if(first.equals(second)){
-					dontDelete.add(first);
-					dontCreate.add(second);
+		for (VPClass vp_iof : vp_iofs) {
+			for (OntoLClass ontol_iof : ontol_iofs) {
+				if(vp_iof.equals(ontol_iof)){
+					dontDelete.add(vp_iof);
+					dontCreate.add(ontol_iof);
 					break;
 				}
 			}
 		}
-		firsts.removeAll(dontDelete);
-		for (VPClass todelete : firsts) {
+		vp_iofs.removeAll(dontDelete);
+		for (VPClass todelete : vp_iofs) {
 			vpc.removeInstantiationTo(todelete);
 		}
-		seconds.removeAll(dontCreate);
-		for (OntoLClass tocreate : seconds) {
-			vpc.addInstantiatedTo(tocreate);
+		ontol_iofs.removeAll(dontCreate);
+		for (OntoLClass tocreate : ontol_iofs) {
+			vpc.addInstantiationTo(tocreate);
 		}
 	}
 
