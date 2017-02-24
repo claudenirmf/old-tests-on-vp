@@ -361,7 +361,8 @@ public class VPClass extends VPModelElement {
 		associationSource.setTo(to.getVPSource());
 		
 		association.getToEnd().setName(reference.getName());
-		association.getToEnd().setMultiplicity(reference.getLowerBound()+".."+reference.getUpperBound());
+		String upperBound = reference.getUpperBound()==-1 ? "*" : reference.getUpperBound().toString();
+		association.getToEnd().setMultiplicity(reference.getLowerBound()+".."+upperBound);
 		association.getToEnd().setNavigable(IAssociationEnd.NAVIGABLE_NAVIGABLE);
 		association.getFromEnd().setNavigable(IAssociationEnd.NAVIGABLE_UNSPECIFIED);
 	}

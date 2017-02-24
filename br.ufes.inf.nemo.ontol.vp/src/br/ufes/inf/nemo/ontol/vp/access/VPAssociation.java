@@ -60,8 +60,11 @@ public class VPAssociation extends VPModelElement {
 	}
 
 	public void update(Reference reference) {
-		String multiplicity = reference.getLowerBound()+".."+reference.getUpperBound();
+		String upperBound = reference.getUpperBound()==-1 ? "*" : reference.getUpperBound().toString() ;
+		String multiplicity = reference.getLowerBound()+".."+upperBound;
 		getToEnd().setMultiplicity(multiplicity);
+//		if(reference.getSubsetOf()!=null && !reference.getSubsetOf().isEmpty()){
+//		}
 		// TODO Add subsets and opposite
 	}
 	
