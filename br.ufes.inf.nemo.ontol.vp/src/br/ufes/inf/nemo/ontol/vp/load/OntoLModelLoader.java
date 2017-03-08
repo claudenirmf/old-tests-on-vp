@@ -27,6 +27,7 @@ import com.vp.plugin.model.ITaggedValueDefinition;
 import com.vp.plugin.model.ITaggedValueDefinitionContainer;
 import com.vp.plugin.model.factory.IModelElementFactory;
 
+import br.ufes.inf.nemo.ontol.model.Attribute;
 import br.ufes.inf.nemo.ontol.model.CategorizationType;
 import br.ufes.inf.nemo.ontol.model.EntityDeclaration;
 import br.ufes.inf.nemo.ontol.model.FOClass;
@@ -39,6 +40,7 @@ import br.ufes.inf.nemo.ontol.model.OntoLClass;
 import br.ufes.inf.nemo.ontol.model.OrderlessClass;
 import br.ufes.inf.nemo.ontol.model.Reference;
 import br.ufes.inf.nemo.ontol.vp.access.VPAssociation;
+import br.ufes.inf.nemo.ontol.vp.access.VPAttribute;
 import br.ufes.inf.nemo.ontol.vp.access.VPClass;
 import br.ufes.inf.nemo.ontol.vp.access.VPDependency;
 import br.ufes.inf.nemo.ontol.vp.access.VPDependencyType;
@@ -426,24 +428,33 @@ public class OntoLModelLoader {
 		for (Reference reference : references) {
 			vpc.addToAssociation(reference);
 		}
-		/*
-		for (Reference reference : references){
-			boolean found = false;
-			for (VPAssociation association : associations)
-				if(association.equals(reference)){
-					found = true;
-					break;
-				}
-			if(!found){
-				vpc.addSubordinatorClass(second);
-			}
-		}
-		*/
 	}
 
 	private static void updateAttributes(OntoLClass c, VPClass vpc) {
-		// TODO Auto-generated method stub
-		
+		Set<VPAttribute> vp_atts = vpc.getAttributes();
+		List<Attribute> ontol_atts = c.getAttributes();
+		Set<VPAttribute> theseAreOk = new HashSet<VPAttribute>();
+		Set<Attribute> ignoreThese = new HashSet<Attribute>();
+		// Who is on first but not on second must leave
+		for (VPAttribute vp_att : vp_atts) {
+			for (Attribute ontol_att : ontol_atts) {
+				if(vp_att.equals(ontol_att)){
+					vp_att.update(ontol_att);
+					theseAreOk.add(vp_att);
+					ignoreThese.add(ontol_att);
+					break;
+				}
+			}
+		}
+		vp_atts.removeAll(theseAreOk);
+		ontol_atts.removeAll(ignoreThese);
+		for (VPAttribute vp_att : vp_atts) {
+			vp_att.getVPSource().delete();
+		}
+		// Who is on second but not on first must stay
+		for (Attribute ontol_att : ontol_atts) {
+			vpc.addAttribute(ontol_att);
+		}
 	}
 
 	private static void setStereotype(EntityDeclaration e, VPClass vpc) {

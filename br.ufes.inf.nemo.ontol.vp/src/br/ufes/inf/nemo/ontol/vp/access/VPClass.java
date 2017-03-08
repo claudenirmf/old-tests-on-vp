@@ -7,20 +7,18 @@ import java.util.Set;
 
 import com.vp.plugin.model.IAssociation;
 import com.vp.plugin.model.IAssociationEnd;
+import com.vp.plugin.model.IAttribute;
 import com.vp.plugin.model.IClass;
 import com.vp.plugin.model.IDependency;
 import com.vp.plugin.model.IGeneralization;
-import com.vp.plugin.model.IModelElement;
-import com.vp.plugin.model.IReference;
 import com.vp.plugin.model.IRelationship;
 import com.vp.plugin.model.IRelationshipEnd;
-import com.vp.plugin.model.IStereotype;
 import com.vp.plugin.model.ITaggedValue;
 import com.vp.plugin.model.ITaggedValueContainer;
 import com.vp.plugin.model.factory.IModelElementFactory;
 
+import br.ufes.inf.nemo.ontol.model.Attribute;
 import br.ufes.inf.nemo.ontol.model.CategorizationType;
-import br.ufes.inf.nemo.ontol.model.EntityDeclaration;
 import br.ufes.inf.nemo.ontol.model.HOClass;
 import br.ufes.inf.nemo.ontol.model.OntoLClass;
 import br.ufes.inf.nemo.ontol.model.Reference;
@@ -381,6 +379,31 @@ public class VPClass extends VPModelElement {
 	public void removeInstantiationTo(VPClass todelete) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public Set<VPAttribute> getAttributes() {
+		Set<VPAttribute> attSet = new HashSet<VPAttribute>();
+		IAttribute[] atts = getVPSource().toAttributeArray();
+		
+		if(atts==null || atts.length==0)	return attSet;
+
+		for (IAttribute att : atts)
+			attSet.add((VPAttribute) VPModelElement.wrap(att));
+		return attSet;
+	}
+
+	public void addAttribute(Attribute att) {
+		IModelElementFactory factory = IModelElementFactory.instance();
+		VPAttribute vp_att = (VPAttribute) VPModelElement.wrap(factory.createAttribute());
+
+		getVPSource().addAttribute(vp_att.getVPSource());
+		vp_att.getVPSource().setName(att.getName());
+		String upperBound = att.getUpperBound()==-1 ? "*" : att.getUpperBound().toString();
+		vp_att.getVPSource().setMultiplicity(att.getLowerBound()+".."+upperBound);
+		
+		String fqn = OntoLModelLoader.getFullyQualifiedName(att.getPropertyClass());
+		VPClass type = (VPClass) VPModelAccess.getModelElement(fqn);
+		vp_att.getVPSource().setType(type.getVPSource());
 	}
 	
 }
