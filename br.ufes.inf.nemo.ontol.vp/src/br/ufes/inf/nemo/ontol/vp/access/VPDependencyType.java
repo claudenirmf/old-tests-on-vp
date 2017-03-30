@@ -1,13 +1,10 @@
 package br.ufes.inf.nemo.ontol.vp.access;
 
-import com.vp.plugin.model.IStereotype;
-
 import br.ufes.inf.nemo.ontol.model.CategorizationType;
 import br.ufes.inf.nemo.ontol.vp.load.OntoLModelLoader;
 
 public enum VPDependencyType {
 
-	NONE(""),
 	INSTANTIATION(OntoLModelLoader.STR_INSTANTIATION),
 	SUBORDINATION(OntoLModelLoader.STR_SUBORDINATION),
 	CATERGORIZATION(OntoLModelLoader.STR_CATEGORIZATION),
@@ -37,7 +34,7 @@ public enum VPDependencyType {
 		case PARTITIONING:
 			return CategorizationType.PARTITIONER;
 		default:
-			return CategorizationType.NONE;
+			return null;
 		}
 	}
 	

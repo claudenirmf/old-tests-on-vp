@@ -51,7 +51,7 @@ public class VPAssociation extends VPModelElement {
 		if(!fqn1.equals(fqn2))
 			return false;
 		// Compare reference target and association target
-		String fqn3 = OntoLModelLoader.getFullyQualifiedName(reference.getPropertyClass());
+		String fqn3 = OntoLModelLoader.getFullyQualifiedName(reference.getPropertyType());
 		String fqn4 = getTo().getFullyQualifiedName();
 		if(!fqn3.equals(fqn4))
 			return false;

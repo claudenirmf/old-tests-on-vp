@@ -156,15 +156,15 @@ public class OntoLModelLoader {
 	}
 
 	public static String getFullyQualifiedName(ModelElement element) {
-		if(element instanceof OntoLClass){
-			if(((OntoLClass) element).getName() == null)	
+		if(element instanceof EntityDeclaration){
+			if(((EntityDeclaration) element).getName() == null)	
 				System.out.println("The element name is null.");
-			else if(element.eContainer() == null)	System.out.println("The container of "+((OntoLClass) element).getName()+" is null.");
-			else if(((Model) element.eContainer()).getName() == null)	System.out.println("The container name of"+((OntoLClass) element).getName()+" is null.");
+			else if(element.eContainer() == null)	System.out.println("The container of "+((EntityDeclaration) element).getName()+" is null.");
+			else if(((Model) element.eContainer()).getName() == null)	System.out.println("The container name of"+((EntityDeclaration) element).getName()+" is null.");
 			
 			
 			return ((Model) element.eContainer()).getName() 
-					+ '.' + ((OntoLClass) element).getName();
+					+ '.' + ((EntityDeclaration) element).getName();
 		} else {
 			return "";
 		}
@@ -371,36 +371,48 @@ public class OntoLModelLoader {
 
 	private static void updateCategorizations(OntoLClass c, VPClass vpc) {
 		VPDependency vpd = vpc.getDependencyToBasetype();
-		OntoLClass basetype = c.getBasetype();
-		OntoLClass basepwt = c.getPowertypeOf();
-		// No current basetype
-		if(vpd == null){
-			if(basetype!=null)
-				vpc.addBasetypeClass(basetype,c.getCategorizationType());
-			else if(basepwt!=null)
-				vpc.addBasetypeClass(basepwt);
-			return	;
+		OntoLClass cat_base = c.getBasetype();
+		if(vpd==null && cat_base==null){			// No current basetype
+			return ; 								//dont exist -> do nothing
 		}
-		// Check for a match
-		VPClass basevpc = vpd.getTarget();
-		String fqn = basevpc.getFullyQualifiedName();
-		VPDependencyType vpdtype = vpd.getType();
-		if(fqn.equals(getFullyQualifiedName(basepwt)) && vpdtype==VPDependencyType.POWERTYPING){
-			return	;
-		} else if(fqn.equals(getFullyQualifiedName(basetype)) && vpdtype.convert()==basetype.getCategorizationType()) {
-			return	;
+		else if(vpd!=null && cat_base==null){
+			vpd.delete();							//existed -> delete
+			return ; 
 		}
-		// In case of no match, delete and recreate
-		vpd.getVPSource().delete();
-		if(basetype!=null)
-			vpc.addBasetypeClass(basetype,c.getCategorizationType());
-		else if(basepwt!=null)
-			vpc.addBasetypeClass(basepwt);
-		return	;
+		else if(vpd==null && cat_base!=null){
+			vpc.addBasetype(cat_base,c.getCategorizationType());	//dont exist -> create
+			return ;
+		} 
+		else if(vpd.categorizes(cat_base, c.getCategorizationType())){
+			return ;								// if they are the same -> do nothing
+		}
+		else {
+			vpd.delete();							// if they don't match -> delete and create
+			vpc.addBasetype(cat_base,c.getCategorizationType());
+		}
 	}
 
 	private static void updatePowertyping(OntoLClass c, VPClass vpc) {
-		// TODO break updateCategorizations into two methods
+		VPDependency vpd = vpc.getDependencyToPowertypeOf();
+		OntoLClass pwt_base = c.getPowertypeOf();
+		if(vpd==null && pwt_base==null){			// No current basetype
+			return ; 								//dont exist -> do nothing
+		}
+		else if(vpd!=null && pwt_base==null){
+			vpd.delete();							//existed -> delete
+			return ; 
+		}
+		else if(vpd==null && pwt_base!=null){
+			vpc.addPowertypeOf(pwt_base);	//dont exist -> create
+			return ;
+		} 
+		else if(vpd.isPowertypeOf(pwt_base, c.getCategorizationType())){
+			return ;								// if they are the same -> do nothing
+		}
+		else {
+			vpd.delete();							// if they don't match -> delete and create
+			vpc.addPowertypeOf(pwt_base);
+		}
 	}
 
 	private static void updateReferences(OntoLClass c, VPClass vpc) {

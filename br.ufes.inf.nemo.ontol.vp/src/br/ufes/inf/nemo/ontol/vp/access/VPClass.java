@@ -19,6 +19,7 @@ import com.vp.plugin.model.factory.IModelElementFactory;
 
 import br.ufes.inf.nemo.ontol.model.Attribute;
 import br.ufes.inf.nemo.ontol.model.CategorizationType;
+import br.ufes.inf.nemo.ontol.model.EntityDeclaration;
 import br.ufes.inf.nemo.ontol.model.HOClass;
 import br.ufes.inf.nemo.ontol.model.OntoLClass;
 import br.ufes.inf.nemo.ontol.model.Reference;
@@ -174,7 +175,6 @@ public class VPClass extends VPModelElement {
 	private Set<VPDependency> getDependenciesByType(VPDependencyType type) {
 		Set<VPDependency> dependencies = new HashSet<VPDependency>();
 		IClass source = getVPSource();
-//		if(source.fromRelationshipCount()==0) { return dependencies; }
 		
 		@SuppressWarnings("rawtypes")
 		Iterator iter = source.fromRelationshipIterator();
@@ -184,11 +184,6 @@ public class VPClass extends VPModelElement {
 				VPDependency vpd = (VPDependency) VPModelElement.wrap(r);
 				if(vpd.getType()==type)
 					dependencies.add(vpd);
-//				String[] strNames = ((IDependency) r).toStereotypeArray();
-//				if(strNames==null || strNames.length==0)	continue;
-//				for(String name : strNames)
-//					if(name.equals(strName))
-//						dependencies.add((VPDependency) VPModelElement.wrap(r));
 			}
 		}
 		return dependencies;
@@ -252,7 +247,7 @@ public class VPClass extends VPModelElement {
 		}
 	}
 
-	private void addDependencyTo(OntoLClass c, String dependencyStereotype) {
+	public void addDependencyTo(OntoLClass c, String dependencyStereotype) {
 		IDependency d = IModelElementFactory.instance().createDependency();
 		VPDependency vpd = (VPDependency) VPModelElement.wrap(d);
 		VPClass target = (VPClass) VPModelAccess.getModelElement(OntoLModelLoader.getFullyQualifiedName(c));
@@ -263,12 +258,6 @@ public class VPClass extends VPModelElement {
 	
 	public void addInstantiationTo(OntoLClass c) {
 		addDependencyTo(c, OntoLModelLoader.STR_INSTANTIATION);
-//		IDependency d = IModelElementFactory.instance().createDependency();
-//		VPDependency vpd = (VPDependency) VPModelElement.wrap(d);
-//		VPClass target = (VPClass) VPModelAccess.getModelElement(OntoLModelLoader.getFullyQualifiedName(c));
-//		vpd.setTarget(target);
-//		vpd.setSource(this);
-//		vpd.addStereotype(OntoLModelLoader.STR_INSTANTIATION);
 	}
 
 	public void addSubordinatorClass(OntoLClass c) {
@@ -276,16 +265,26 @@ public class VPClass extends VPModelElement {
 	}
 
 	public VPDependency getDependencyToBasetype() {
-		// TODO Auto-generated method stub
 		Set<VPDependency> dependencies = getDependencies();
 		for (VPDependency vpd : dependencies) {
 			switch (vpd.getType()) {
-			case INSTANTIATION:
-			case SUBORDINATION:
 			case CATERGORIZATION:
 			case COMPLETE_CATEGORIZATION:
 			case DISJOINT_CATEGORIZATION:
 			case PARTITIONING:
+				return vpd;
+			default:
+				break;
+			}
+		}
+		
+		return null;
+	}
+	
+	public VPDependency getDependencyToPowertypeOf() {
+		Set<VPDependency> dependencies = getDependencies();
+		for (VPDependency vpd : dependencies) {
+			switch (vpd.getType()) {
 			case POWERTYPING:
 				return vpd;
 			default:
@@ -296,14 +295,21 @@ public class VPClass extends VPModelElement {
 		return null;
 	}
 	
+//	public VPDependency getCategorization() {
+//		Set<VPDependency> dependencies = getDependencies();
+//		for (VPDependency vpd : dependencies)
+//			if(vpd.isCategorization())
+//				return vpd;
+//		return null;
+//	}
+	
 	private Set<VPDependency> getDependencies(){
 		Set<VPDependency> dependencies = new HashSet<VPDependency>();
 		IClass source = getVPSource();
-		if(source.toRelationshipCount()==0) { return dependencies; }
 		
 		@SuppressWarnings("rawtypes")
-		Iterator iter = source.toRelationshipIterator();
-		while(iter.hasNext()){
+		Iterator iter = source.fromRelationshipIterator();
+		while(iter!=null && iter.hasNext()){
 			IRelationship r = (IRelationship) iter.next();
 			if(r instanceof IDependency)
 				dependencies.add((VPDependency) VPModelElement.wrap(r));
@@ -311,7 +317,7 @@ public class VPClass extends VPModelElement {
 		return dependencies;
 	}
 
-	public void addBasetypeClass(OntoLClass c, CategorizationType catType) {
+	public void addBasetype(OntoLClass c, CategorizationType catType) {
 		switch (catType) {
 		case CATEGORIZER:
 			addDependencyTo(c,OntoLModelLoader.STR_CATEGORIZATION);
@@ -330,7 +336,7 @@ public class VPClass extends VPModelElement {
 		}
 	}
 
-	public void addBasetypeClass(OntoLClass c) {
+	public void addPowertypeOf(OntoLClass c) {
 		addDependencyTo(c,OntoLModelLoader.STR_POWER_TYPE);
 	}
 	
@@ -354,7 +360,7 @@ public class VPClass extends VPModelElement {
 		VPAssociation association = (VPAssociation) VPModelElement.wrap(associationSource);
 
 		getVPSource().getParent().addChild(associationSource);
-		VPClass to = (VPClass) VPModelAccess.getModelElement(OntoLModelLoader.getFullyQualifiedName(reference.getPropertyClass()));
+		VPClass to = (VPClass) VPModelAccess.getModelElement(OntoLModelLoader.getFullyQualifiedName(reference.getPropertyType()));
 		associationSource.setFrom(getVPSource());
 		associationSource.setTo(to.getVPSource());
 		
@@ -367,18 +373,17 @@ public class VPClass extends VPModelElement {
 	
 	@Override
 	public boolean equals(Object obj) {
-		if(obj instanceof OntoLClass){
-			OntoLClass oc = (OntoLClass) obj;
+		if(obj instanceof EntityDeclaration){
+			EntityDeclaration entity = (EntityDeclaration) obj;
 			String str1 = getFullyQualifiedName();
-			String str2 = OntoLModelLoader.getFullyQualifiedName(oc);
+			String str2 = OntoLModelLoader.getFullyQualifiedName(entity);
 			return str1.equals(str2);
 		}
 		return super.equals(obj);
 	}
 
 	public void removeInstantiationTo(VPClass todelete) {
-		// TODO Auto-generated method stub
-		
+		// TODO Implement deletion
 	}
 
 	public Set<VPAttribute> getAttributes() {
@@ -401,7 +406,7 @@ public class VPClass extends VPModelElement {
 		String upperBound = att.getUpperBound()==-1 ? "*" : att.getUpperBound().toString();
 		vp_att.getVPSource().setMultiplicity(att.getLowerBound()+".."+upperBound);
 		
-		String fqn = OntoLModelLoader.getFullyQualifiedName(att.getPropertyClass());
+		String fqn = OntoLModelLoader.getFullyQualifiedName(att.getPropertyType());
 		VPClass type = (VPClass) VPModelAccess.getModelElement(fqn);
 		vp_att.getVPSource().setType(type.getVPSource());
 	}

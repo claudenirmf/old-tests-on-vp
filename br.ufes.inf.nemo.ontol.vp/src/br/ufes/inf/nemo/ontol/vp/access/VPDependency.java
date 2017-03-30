@@ -4,6 +4,8 @@ import com.vp.plugin.model.IClass;
 import com.vp.plugin.model.IDependency;
 import com.vp.plugin.model.IStereotype;
 
+import br.ufes.inf.nemo.ontol.model.CategorizationType;
+import br.ufes.inf.nemo.ontol.model.OntoLClass;
 import br.ufes.inf.nemo.ontol.vp.load.OntoLModelLoader;
 
 /**
@@ -47,10 +49,10 @@ public class VPDependency extends VPModelElement {
 	
 	public VPDependencyType getType(){
 		String[] strs = getVPSource().toStereotypeArray();
-		if(strs == null)	return VPDependencyType.NONE;
+		if(strs == null)	return null;
 		
 		for (String str : strs) {
-			if(str == VPDependencyType.INSTANTIATION.str())
+			if(str.equals(VPDependencyType.INSTANTIATION.str()))
 				return VPDependencyType.INSTANTIATION;
 			else if(str.equals(VPDependencyType.SUBORDINATION.str()))
 				return VPDependencyType.SUBORDINATION;
@@ -65,7 +67,51 @@ public class VPDependency extends VPModelElement {
 			else if(str.equals(VPDependencyType.POWERTYPING.str()))
 				return VPDependencyType.POWERTYPING;
 		}
-		return VPDependencyType.NONE;
+		return null;
+	}
+
+	public void delete() {
+		getVPSource().delete();
+	}
+
+	public boolean categorizes(OntoLClass cat_base, CategorizationType cat_type) {
+		if(!isCategorization())
+			return false;
+		else if(!getTarget().equals(cat_base))
+			return false;
+		else if(getType()==null || getType().convert() != cat_type)
+			return false;
+		else
+			return true;
+	}
+
+	public boolean isCategorization() {
+		VPDependencyType type = getType();
+		return type==VPDependencyType.CATERGORIZATION ||
+			type==VPDependencyType.COMPLETE_CATEGORIZATION ||
+			type==VPDependencyType.DISJOINT_CATEGORIZATION ||
+			type==VPDependencyType.PARTITIONING;
+	}
+	
+	@Override
+	public String toString() {
+		return getSource().getFullyQualifiedName() + " " + getType() + 
+				" " + getTarget().getFullyQualifiedName() + " " + getId();
+	}
+
+	public boolean isPowertypeOf(OntoLClass pwt_base, CategorizationType pwt_type) {
+		if(!isPowertype())
+			return false;
+		else if(!getTarget().equals(pwt_base))
+			return false;
+		else if(getType()==null || getType().convert() != pwt_type)
+			return false;
+		else
+			return true;
+	}
+
+	private boolean isPowertype() {
+		return getType()==VPDependencyType.POWERTYPING;
 	}
 	
 }

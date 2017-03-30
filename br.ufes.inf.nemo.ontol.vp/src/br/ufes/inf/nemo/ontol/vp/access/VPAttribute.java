@@ -4,7 +4,6 @@ import com.vp.plugin.model.IAttribute;
 
 import br.ufes.inf.nemo.ontol.model.Attribute;
 import br.ufes.inf.nemo.ontol.model.ModelElement;
-import br.ufes.inf.nemo.ontol.model.Reference;
 import br.ufes.inf.nemo.ontol.vp.load.OntoLModelLoader;
 
 public class VPAttribute extends VPModelElement {
@@ -33,7 +32,7 @@ public class VPAttribute extends VPModelElement {
 		if(!fqn1.equals(fqn2))
 			return false;
 		// Compare attribute type name and property type name
-		String fqn3 = OntoLModelLoader.getFullyQualifiedName((ModelElement) attribute.getPropertyClass());
+		String fqn3 = OntoLModelLoader.getFullyQualifiedName((ModelElement) attribute.getPropertyType());
 		String fqn4 = getType().getFullyQualifiedName();
 		if(!fqn3.equals(fqn4))
 			return false;
@@ -48,7 +47,7 @@ public class VPAttribute extends VPModelElement {
 	}
 
 	public VPClass getParent() {
-		String fqn = VPModelElement.getFullyQualifiedName(getVPSource());
+		String fqn = VPModelElement.getFullyQualifiedName(getVPSource().getParent());
 		return (VPClass) VPModelAccess.getModelElement(fqn);
 	}
 
