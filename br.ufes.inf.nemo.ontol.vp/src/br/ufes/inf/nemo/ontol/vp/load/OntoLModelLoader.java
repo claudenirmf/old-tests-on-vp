@@ -406,7 +406,7 @@ public class OntoLModelLoader {
 			vpc.addPowertypeOf(pwt_base);	//dont exist -> create
 			return ;
 		} 
-		else if(vpd.isPowertypeOf(pwt_base, c.getCategorizationType())){
+		else if(vpd.isPowertypeOf(pwt_base, c)){
 			return ;								// if they are the same -> do nothing
 		}
 		else {

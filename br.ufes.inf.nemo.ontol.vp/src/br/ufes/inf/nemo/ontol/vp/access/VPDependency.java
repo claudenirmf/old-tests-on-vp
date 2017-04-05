@@ -5,6 +5,7 @@ import com.vp.plugin.model.IDependency;
 import com.vp.plugin.model.IStereotype;
 
 import br.ufes.inf.nemo.ontol.model.CategorizationType;
+import br.ufes.inf.nemo.ontol.model.ModelPackage;
 import br.ufes.inf.nemo.ontol.model.OntoLClass;
 import br.ufes.inf.nemo.ontol.vp.load.OntoLModelLoader;
 
@@ -99,12 +100,13 @@ public class VPDependency extends VPModelElement {
 				" " + getTarget().getFullyQualifiedName() + " " + getId();
 	}
 
-	public boolean isPowertypeOf(OntoLClass pwt_base, CategorizationType pwt_type) {
+	public boolean isPowertypeOf(OntoLClass pwt_base, OntoLClass oc) {
 		if(!isPowertype())
 			return false;
 		else if(!getTarget().equals(pwt_base))
 			return false;
-		else if(getType()==null || getType().convert() != pwt_type)
+		else if (getType() == null || 
+				oc.eIsSet(ModelPackage.eINSTANCE.getOntoLClass_CategorizationType()))
 			return false;
 		else
 			return true;
