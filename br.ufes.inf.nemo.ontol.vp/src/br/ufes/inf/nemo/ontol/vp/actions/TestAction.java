@@ -1,5 +1,7 @@
 package br.ufes.inf.nemo.ontol.vp.actions;
 
+import com.vp.plugin.ApplicationManager;
+import com.vp.plugin.ViewManager;
 import com.vp.plugin.action.VPAction;
 import com.vp.plugin.action.VPActionController;
 import com.vp.plugin.model.IAssociation;
@@ -9,6 +11,8 @@ import com.vp.plugin.model.IClass;
 import com.vp.plugin.model.IPackage;
 import com.vp.plugin.model.factory.IModelElementFactory;
 
+import br.ufes.inf.nemo.ontol.vp.OntoLPluginForVP;
+
 public class TestAction implements VPActionController {
 	
 //	private Set<IModelElement>	testElements = new HashSet<IModelElement>();
@@ -16,13 +20,41 @@ public class TestAction implements VPActionController {
 	@Override
 	public void performAction(VPAction arg0) {
 		//testAssociation();
-		testAttribute();
+		//testAttribute();
+		testThread();
 	}
 
 	@Override
 	public void update(VPAction arg0) {
 //		for (IModelElement elem : testElements)	elem.delete();
 //		testElements.clear();
+	}
+	
+	private void testThread() {
+		ViewManager vm = ApplicationManager.instance().getViewManager(); 
+		vm.clearMessages(OntoLPluginForVP.PLUGIN_ID);
+		new Thread() {
+			@Override public void run() {
+				int life = 4;
+				while(life>=0){
+					vm.showMessage("A's LIFE \t"+life--,OntoLPluginForVP.PLUGIN_ID);
+					try { sleep(1000); } catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}.start();
+		new Thread() {
+			@Override public void run() {
+				int life = 6;
+				while(life>=0){
+					vm.showMessage("B's LIFE \t"+life--,OntoLPluginForVP.PLUGIN_ID);
+					try { sleep(1000); } catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}.start();
 	}
 	
 	private void testAttribute() {
